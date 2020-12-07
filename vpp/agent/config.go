@@ -49,6 +49,11 @@ type VppIPSecSA struct {
 	Value *vpp_ipsec.SecurityAssociation
 }
 
+type VppIPSecSP struct {
+	KVData
+	Value *vpp_ipsec.SecurityPolicy
+}
+
 func agentctlDumpData(handler probe.Host, format, model string) ([]byte, error) {
 	dump, err := handler.ExecCmd("agentctl", "dump", "-f ", format, model)
 	if err != nil {
@@ -128,6 +133,16 @@ func retrieveIPSecTunProtects(handler probe.Handler) ([]VppIPSecTunProtect, erro
 func retrieveIPSecSAs(handler probe.Handler) ([]VppIPSecSA, error) {
 	var list []VppIPSecSA
 	err := agentctlDumpModel(handler, vpp_ipsec.ModelSecurityAssociation, &list)
+	if err != nil {
+		return nil, err
+	}
+
+	return list, nil
+}
+
+func retrieveIPSecSPs(handler probe.Handler) ([]VppIPSecSP, error) {
+	var list []VppIPSecSP
+	err := agentctlDumpModel(handler, vpp_ipsec.ModelSecurityPolicy, &list)
 	if err != nil {
 		return nil, err
 	}

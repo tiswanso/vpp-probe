@@ -78,6 +78,26 @@ func PrintInterfacesTable(out io.Writer, instance *Instance) {
 		fmt.Fprintf(w, "%3v\t%v\t%v\t%v\v%v\t%v\t%v\t%v %s",
 			idx, name, typ, state, ips, vrf, mtu, interfaceInfo(iface), endOfLine)
 	}
+	fmt.Fprintf(w, "\nSecurityPolicy\n%v\tIn/Out\t%v\t%v\t%v\t%v\t\n",
+		escapeClr(color.LightWhite, "SrcIP <-> DestIp"), escapeClr(color.White, "SA"), escapeClr(color.White, "SPI"), escapeClr(color.White, "CRYPTO"),escapeClr(color.White, "INTEG") )
+	ipsecSPs := instance.IPSecSPs
+	for _, sp := range ipsecSPs {
+		srcdestIp := escapeClr(color.LightWhite, sp.Value.LocalAddrStart + " <-> " + sp.Value.RemoteAddrStart)
+		direction := "in"
+		if sp.Value.IsOutbound {
+			direction = "out"
+		}
+		saIdx := escapeClr(color.LightWhite, sp.Value.SaIndex)
+		//endOfLine := "\n"
+		sa := FindIPSecSA(sp.Value.SaIndex, instance.IPSecSAs)
+		if sa != nil {
+			fmt.Fprintf(w, "%v\t%3v\t%v\t%v\t%v\t%v\n",
+			srcdestIp, direction, saIdx, escapeClr(color.LightWhite, sa.Value.Spi), escapeClr(color.LightWhite, sa.Value.CryptoKey), escapeClr(color.LightWhite, sa.Value.IntegKey))
+		} else {
+			fmt.Fprintf(w, "%v\t%3v\t%v\n",
+				srcdestIp, direction, saIdx)
+		}
+	}
 	if err := w.Flush(); err != nil {
 		log.Println(err)
 		return

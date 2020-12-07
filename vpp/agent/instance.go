@@ -3,7 +3,6 @@ package agent
 import (
 	"github.com/sirupsen/logrus"
 	vpp_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-
 	"go.ligato.io/vpp-probe/probe"
 )
 
@@ -24,6 +23,7 @@ type Instance struct {
 	// IPSec
 	IPSecTunProtects []VppIPSecTunProtect
 	IPSecSAs         []VppIPSecSA
+	IPSecSPs         []VppIPSecSP
 }
 
 func NewInstance(handler probe.Handler) (*Instance, error) {
@@ -77,6 +77,11 @@ func UpdateInstanceInfo(instance *Instance) (err error) {
 		logrus.Warnf("dump ipsec SAs failed: %v", err)
 	}
 
+	instance.IPSecSPs, err = retrieveIPSecSPs(instance.Handler)
+	if err != nil {
+		logrus.Warnf("dump ipsec SPs failed: %v", err)
+	}
+
 	return nil
 }
 
@@ -118,9 +123,21 @@ func FindIPSecTunProtectFor(intfName string, tunProtects []VppIPSecTunProtect) *
 	return nil
 }
 
+func FindIPSecSA(saIdx uint32, ipsecSas []VppIPSecSA) *VppIPSecSA {
+	for _, sa := range ipsecSas {
+		if saIdx == sa.Value.Index {
+			return &sa
+		}
+	}
+	return nil
+}
+
 func HasAnyIPSecConfig(vpp *Instance) bool {
 	switch {
 	case len(vpp.IPSecTunProtects) > 0,
+		len(vpp.IPSecSAs) > 0:
+		return true
+	case len(vpp.IPSecSPs) > 0,
 		len(vpp.IPSecSAs) > 0:
 		return true
 	}
